@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>حساب و کتاب</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2f6fed">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="حساب و کتاب">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --blue:#2f6fed; --blue-2:#5b8cff; --blue-deep:#1c3fa0; --blue-soft:#e7eefe;
+    --ink:#111a2e; --ink-soft:#66708a; --paper:#f2f5fc; --surface:#ffffff; --border:#e3e8f5;
+    --income:#16a673; --income-soft:#e2f6ee; --expense:#ef5a63; --expense-soft:#fde9ea;
+    --radius-lg:24px; --radius-md:16px; --radius-sm:12px;
+    --shadow:0 1px 2px rgba(17,26,46,.05), 0 10px 26px -14px rgba(28,63,160,.28);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#eef2ff; --ink-soft:#9aa3c2; --paper:#0c101e; --surface:#151a2c;
+      --border:#242c47; --blue-soft:#182449; --income-soft:#0f2620; --expense-soft:#301a20;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 26px -14px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#eef2ff; --ink-soft:#9aa3c2; --paper:#0c101e; --surface:#151a2c;
+    --border:#242c47; --blue-soft:#182449; --income-soft:#0f2620; --expense-soft:#301a20;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 26px -14px rgba(0,0,0,.7);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{ margin:0; background:var(--paper); color:var(--ink); font-family:'Vazirmatn',system-ui,sans-serif;
+    padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); -webkit-tap-highlight-color:transparent; }
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  .shell{max-width:480px; margin:0 auto; min-height:100%; display:flex; flex-direction:column; position:relative;}
+
+  .topbar{ position:sticky; top:0; z-index:20; background:var(--paper); padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 10px;
+    display:flex; align-items:center; justify-content:center; gap:8px; position:relative; }
+  .month-switch{display:flex; align-items:center; gap:10px;}
+  .month-switch button{ width:34px; height:34px; border-radius:50%; border:1px solid var(--border); background:var(--surface);
+    color:var(--blue); font-size:16px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-weight:700; }
+  .month-switch .lbl{font-weight:800; font-size:16px; min-width:120px; text-align:center;}
+  .theme-btn{ width:34px; height:34px; border-radius:50%; border:1px solid var(--border); background:var(--surface);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:15px; position:absolute; left:16px; top:calc(env(safe-area-inset-top,0px) + 14px); }
+
+  main{flex:1; padding:4px 16px 100px; overflow-x:hidden;}
+  .page{display:none;}
+  .page.active{display:block; animation:fadein .18s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+
+  .demo-banner{ display:flex; align-items:center; gap:10px; background:var(--blue-soft); border:1px solid var(--blue-2);
+    border-radius:var(--radius-md); padding:12px 14px; margin:10px 0 14px; font-size:12.5px; color:var(--ink); }
+  .demo-banner .txt{flex:1; line-height:1.7;}
+  .demo-banner button{ background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:7px 12px;
+    font-size:12px; font-weight:700; color:var(--blue); cursor:pointer; font-family:inherit; white-space:nowrap; }
+
+  .hero{ position:relative; overflow:hidden; background:linear-gradient(135deg,var(--blue) 0%, var(--blue-deep) 100%);
+    color:#fff; border-radius:var(--radius-lg); padding:26px 22px 22px; margin:10px 0 14px; box-shadow:var(--shadow); }
+  .hero::before{ content:""; position:absolute; width:180px; height:180px; border-radius:50%; background:rgba(255,255,255,.09); top:-70px; left:-50px; }
+  .hero::after{ content:""; position:absolute; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,.07); bottom:-50px; right:-30px; }
+  .hero .top-row{display:flex; align-items:center; justify-content:space-between; position:relative; z-index:1;}
+  .hero .label{font-size:13px; color:#dbe6ff; font-weight:600;}
+  .hero .badge{font-size:22px;}
+  .hero .amount{font-size:37px; font-weight:800; margin-top:6px; letter-spacing:-.5px; direction:ltr; text-align:right; unicode-bidi:plaintext; position:relative; z-index:1;}
+  .hero .amount span{font-size:15px; font-weight:500; margin-inline-start:4px; color:#dbe6ff;}
+  .hero .pills{display:flex; gap:10px; margin-top:16px; position:relative; z-index:1;}
+  .pill{flex:1; background:rgba(255,255,255,.13); border-radius:var(--radius-sm); padding:10px 12px;}
+  .pill .pl{font-size:12px; color:#e4ecff; display:flex; align-items:center; gap:6px;}
+  .pill .dot{width:8px; height:8px; border-radius:50%;}
+  .pill .pv{font-size:16px; font-weight:700; margin-top:4px; direction:ltr; text-align:right; color:#fff;}
+
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px; margin-bottom:14px; box-shadow:var(--shadow); }
+  .card .card-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:2px; flex-wrap:wrap;}
+  .card h3{margin:0; font-size:15px; font-weight:700;}
+  .card .sub{font-size:12.5px; color:var(--ink-soft); margin:6px 0 12px; line-height:1.8;}
+
+  .period-chips{display:flex; gap:6px; flex-wrap:wrap;}
+  .period-chips button{ padding:5px 11px; border-radius:999px; border:1px solid var(--border); background:var(--paper);
+    font-size:11.5px; font-weight:700; color:var(--ink-soft); cursor:pointer; font-family:inherit; }
+  .period-chips button.active{background:var(--blue); border-color:var(--blue); color:#fff;}
+
+  .chart-wrap{position:relative; height:190px; margin-top:10px;}
+  .chart-wrap.tall{height:220px;}
+
+  .empty{text-align:center; padding:34px 10px; color:var(--ink-soft);}
+  .empty .big{font-size:30px; margin-bottom:8px;}
+  .empty p{margin:4px 0 0; font-size:13.5px; line-height:1.9;}
+
+  .day-group{margin-bottom:14px;}
+  .day-group .day-lbl{font-size:12.5px; color:var(--ink-soft); font-weight:700; margin:0 0 8px 4px;}
+  .tx-row{ display:flex; align-items:center; gap:12px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:12px; margin-bottom:8px; }
+  .tx-icon{width:40px; height:40px; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;}
+  .tx-mid{flex:1; min-width:0; cursor:pointer;}
+  .tx-mid .cat{font-weight:700; font-size:14px;}
+  .tx-mid .note{font-size:12.5px; color:var(--ink-soft); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .tx-amt{font-weight:800; font-size:14.5px; direction:ltr; white-space:nowrap;}
+  .tx-del{width:26px; height:26px; border-radius:50%; border:none; background:transparent; color:var(--ink-soft); font-size:15px; cursor:pointer; flex-shrink:0;}
+
+  .filter-row{display:flex; gap:8px; margin-bottom:14px; overflow-x:auto; padding-bottom:2px;}
+  .chip{ flex-shrink:0; padding:7px 14px; border-radius:999px; border:1px solid var(--border); background:var(--surface);
+    font-size:13px; font-weight:700; cursor:pointer; color:var(--ink-soft); font-family:inherit; }
+  .chip.active{background:var(--blue); color:#fff; border-color:var(--blue);}
+
+  .cat-section-title{font-size:13px; font-weight:800; color:var(--ink-soft); margin:18px 4px 8px;}
+  .cat-section-title:first-of-type{margin-top:4px;}
+  .cat-row{display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:12px; margin-bottom:8px;}
+  .cat-swatch{width:38px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;}
+  .cat-row .cn{flex:1; font-weight:700; font-size:14px;}
+  .cat-row .cat-actions{display:flex; gap:2px;}
+  .cat-row button{border:none; background:transparent; color:var(--ink-soft); font-size:13.5px; cursor:pointer; padding:6px 8px; border-radius:8px; font-family:inherit;}
+  .cat-row .del-quick:hover{color:var(--expense); background:var(--expense-soft);}
+  .cat-row .edit-cat:hover{color:var(--blue); background:var(--blue-soft);}
+  .add-cat-btn{width:100%; padding:13px; border-radius:var(--radius-md); border:1.5px dashed var(--blue-2); background:var(--blue-soft); color:var(--blue); font-weight:700; font-size:14px; cursor:pointer; margin-top:4px; font-family:inherit;}
+
+  .sum-row{display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--border);}
+  .sum-row:last-child{border-bottom:none;}
+  .sum-row .left{display:flex; align-items:center; gap:9px; min-width:0;}
+  .sum-row .ic{width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;}
+  .sum-row .nm{font-size:13.5px; font-weight:600;}
+  .sum-row .pct{font-size:11px; color:var(--ink-soft); margin-inline-start:6px;}
+  .sum-row .amt{font-size:13.5px; font-weight:700; direction:ltr; white-space:nowrap;}
+  .sum-total{display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-radius:var(--radius-sm); margin-bottom:6px; font-weight:800; font-size:14px;}
+  .sum-total.inc{background:var(--income-soft); color:var(--income);}
+  .sum-total.exp{background:var(--expense-soft); color:var(--expense);}
+  .sum-total.net{background:var(--blue-soft); color:var(--blue-deep);}
+  .sum-total .amt{direction:ltr;}
+  .sum-block{margin-top:14px;}
+  .sum-block-title{font-size:12.5px; font-weight:800; color:var(--ink-soft); margin-bottom:6px;}
+
+  .navbar{ position:sticky; bottom:0; z-index:20; background:var(--surface); border-top:1px solid var(--border);
+    display:flex; padding:8px 6px calc(env(safe-area-inset-bottom,0px) + 8px); max-width:480px; margin:0 auto; width:100%; }
+  .navbar button{flex:1; background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--ink-soft); font-family:inherit; font-size:11px; font-weight:700; padding:6px 2px; cursor:pointer; border-radius:12px;}
+  .navbar button .ic{font-size:19px;}
+  .navbar button.active{color:var(--blue);}
+
+  .fab{ position:fixed; bottom:0; left:50%; transform:translateX(-50%); margin-bottom:calc(env(safe-area-inset-bottom,0px) + 66px);
+    width:58px; height:58px; border-radius:50%; background:linear-gradient(135deg,var(--blue-2),var(--blue)); color:#fff; border:none;
+    font-size:27px; box-shadow:0 8px 20px -4px rgba(47,111,237,.55); cursor:pointer; z-index:25; display:flex; align-items:center; justify-content:center; }
+
+  .overlay{position:fixed; inset:0; background:rgba(10,15,30,.5); z-index:40; display:none; align-items:flex-end; justify-content:center;}
+  .overlay.open{display:flex;}
+  .sheet{width:100%; max-width:480px; background:var(--surface); border-radius:26px 26px 0 0; padding:18px 18px calc(env(safe-area-inset-bottom,0px) + 18px); max-height:88vh; overflow-y:auto; animation:slideup .22s ease;}
+  @keyframes slideup{from{transform:translateY(30px); opacity:.6;} to{transform:none; opacity:1;}}
+  .sheet-handle{width:38px; height:4px; background:var(--border); border-radius:99px; margin:0 auto 14px;}
+  .sheet h2{margin:0 0 16px; font-size:17px; font-weight:800;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:12.5px; font-weight:700; color:var(--ink-soft); margin-bottom:6px;}
+  .field input[type=text], .field input[type=tel], .field select, .field textarea{ width:100%; padding:12px 13px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--paper); color:var(--ink); font-family:inherit; font-size:14.5px; }
+  .field textarea{resize:none; min-height:56px;}
+  .amt-field{position:relative;}
+  .amt-field input{padding-left:52px; font-weight:800; font-size:18px; direction:ltr; text-align:right;}
+  .amt-field .unit{position:absolute; left:13px; top:50%; transform:translateY(-50%); font-size:12.5px; color:var(--ink-soft); font-weight:700;}
+  .type-toggle{display:flex; gap:8px;}
+  .type-toggle button{flex:1; padding:11px; border-radius:var(--radius-sm); border:1.5px solid var(--border); background:var(--paper); color:var(--ink-soft); font-weight:800; font-size:13.5px; cursor:pointer; font-family:inherit;}
+  .type-toggle button.on.income{background:var(--income-soft); border-color:var(--income); color:var(--income);}
+  .type-toggle button.on.expense{background:var(--expense-soft); border-color:var(--expense); color:var(--expense);}
+  .date-row{display:flex; gap:8px;}
+  .date-row select{flex:1;}
+  .cat-pick{display:flex; flex-wrap:wrap; gap:8px;}
+  .cat-pick .opt{padding:8px 12px; border-radius:999px; border:1.5px solid var(--border); background:var(--paper); font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; color:var(--ink-soft);}
+  .cat-pick .opt.on{border-color:var(--blue); background:var(--blue-soft); color:var(--blue);}
+  .color-pick{display:flex; flex-wrap:wrap; gap:9px;}
+  .color-pick .sw{width:30px; height:30px; border-radius:10px; cursor:pointer; border:2px solid transparent;}
+  .color-pick .sw.on{border-color:var(--ink); transform:scale(1.08);}
+  .icon-pick{display:flex; flex-wrap:wrap; gap:8px;}
+  .icon-pick .ic-opt{width:38px; height:38px; border-radius:12px; border:1.5px solid var(--border); background:var(--paper); display:flex; align-items:center; justify-content:center; font-size:17px; cursor:pointer;}
+  .icon-pick .ic-opt.on{border-color:var(--blue); background:var(--blue-soft);}
+  .sheet-actions{display:flex; gap:10px; margin-top:18px;}
+  .btn{flex:1; padding:13px; border-radius:var(--radius-sm); border:none; font-weight:800; font-size:14.5px; cursor:pointer; font-family:inherit;}
+  .btn.primary{background:linear-gradient(135deg,var(--blue-2),var(--blue)); color:#fff;}
+  .btn.ghost{background:var(--paper); color:var(--ink-soft); border:1px solid var(--border);}
+  .btn.danger{background:var(--expense-soft); color:var(--expense);}
+
+  .toast{position:fixed; bottom:calc(env(safe-area-inset-bottom,0px) + 90px); left:50%; transform:translateX(-50%); background:var(--ink); color:var(--paper); padding:10px 18px; border-radius:999px; font-size:13px; font-weight:700; z-index:60; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-4px);}
+
+  ::-webkit-scrollbar{width:0; height:0;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="topbar">
+    <button class="theme-btn" id="themeBtn" title="تم">🌗</button>
+    <button class="theme-btn" id="settingsBtn" title="تنظیمات" style="left:auto; right:16px;">⚙️</button>
+    <div class="month-switch">
+      <button id="prevMonth">‹</button>
+      <div class="lbl" id="monthLbl">—</div>
+      <button id="nextMonth">›</button>
+    </div>
+  </div>
+
+  <main>
+    <section class="page active" id="page-dash">
+      <div id="demoBannerDash"></div>
+      <div class="hero">
+        <div class="top-row"><div class="label">مانده این ماه</div><div class="badge">🐷</div></div>
+        <div class="amount" id="heroBalance">۰ <span>تومان</span></div>
+        <div class="pills">
+          <div class="pill"><div class="pl"><span class="dot" style="background:#7bffc0"></span>دخل</div><div class="pv" id="heroIncome">۰</div></div>
+          <div class="pill"><div class="pl"><span class="dot" style="background:#ffb4b8"></span>خرج</div><div class="pv" id="heroExpense">۰</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>نسبت دخل به خرج</h3>
+        <div class="sub" id="ratioSub">هنوز تراکنشی ثبت نشده</div>
+        <div class="chart-wrap" id="ratioChartWrap"><canvas id="ratioChart"></canvas></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>روند</h3><div class="period-chips" id="trendPeriodChips"></div></div>
+        <div class="sub" id="trendSub"></div>
+        <div class="chart-wrap" id="trendChartWrap"><canvas id="trendChart"></canvas></div>
+      </div>
+    </section>
+
+    <section class="page" id="page-tx">
+      <div class="filter-row" id="txFilters"></div>
+      <div id="txList"></div>
+    </section>
+
+    <section class="page" id="page-cats">
+      <div class="cat-section-title">دخل</div>
+      <div id="catsIncome"></div>
+      <div class="cat-section-title">خرج</div>
+      <div id="catsExpense"></div>
+      <button class="add-cat-btn" id="addCatBtn">+ افزودن دسته‌بندی جدید</button>
+    </section>
+
+    <section class="page" id="page-reports">
+      <div class="card">
+        <div class="card-head"><h3>خرج به تفکیک دسته</h3><div class="period-chips" id="catPeriodChips"></div></div>
+        <div class="sub" id="catBarSub">بازه انتخاب‌شده</div>
+        <div class="chart-wrap tall" id="catBarWrap"><canvas id="catBarChart"></canvas></div>
+      </div>
+
+      <div class="card" id="summaryCard">
+        <h3>خلاصه عددی</h3>
+        <div class="sub" id="summarySub"></div>
+        <div id="summaryBody"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>سلامت مالی</h3><div class="period-chips" id="healthPeriodChips"></div></div>
+        <div class="sub">۰٪ یعنی دخل و خرج برابرن. بالای صفر یعنی پس‌انداز داری، زیر صفر یعنی خرجت از دخلت بیشتر بوده.</div>
+        <div class="chart-wrap tall" id="healthChartWrap"><canvas id="healthChart"></canvas></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>مقایسه دخل و خرج</h3><div class="period-chips" id="yearPeriodChips"></div></div>
+        <div class="chart-wrap tall" id="yearChartWrap"><canvas id="yearChart"></canvas></div>
+      </div>
+    </section>
+  </main>
+
+  <button class="fab" id="fabAdd">+</button>
+
+  <div class="navbar">
+    <button class="nav-btn active" data-page="dash"><span class="ic">🏠</span>داشبورد</button>
+    <button class="nav-btn" data-page="tx"><span class="ic">📒</span>تراکنش‌ها</button>
+    <button class="nav-btn" data-page="cats"><span class="ic">🗂️</span>دسته‌بندی</button>
+    <button class="nav-btn" data-page="reports"><span class="ic">📊</span>گزارش</button>
+  </div>
+</div>
+
+<div class="overlay" id="txOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2 id="txSheetTitle">ثبت تراکنش جدید</h2>
+    <div class="type-toggle">
+      <button type="button" class="on income" id="typeIncomeBtn">💰 دخل</button>
+      <button type="button" id="typeExpenseBtn">💸 خرج</button>
+    </div>
+    <div class="field" style="margin-top:14px;">
+      <label>مبلغ</label>
+      <div class="amt-field"><input type="tel" id="txAmount" placeholder="۰" inputmode="numeric"><span class="unit">تومان</span></div>
+    </div>
+    <div class="field"><label>دسته‌بندی</label><div class="cat-pick" id="txCatPick"></div></div>
+    <div class="field">
+      <label>تاریخ (شمسی)</label>
+      <div class="date-row"><select id="txDay"></select><select id="txMonth"></select><select id="txYear"></select></div>
+    </div>
+    <div class="field"><label>یادداشت (اختیاری)</label><textarea id="txNote" placeholder="مثلاً خرید هفتگی، حقوق مرداد..."></textarea></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="txCancelBtn">انصراف</button>
+      <button class="btn primary" id="txSaveBtn">ذخیره</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="catOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2 id="catSheetTitle">دسته‌بندی جدید</h2>
+    <div class="type-toggle">
+      <button type="button" class="on income" id="catTypeIncomeBtn">💰 دخل</button>
+      <button type="button" id="catTypeExpenseBtn">💸 خرج</button>
+    </div>
+    <div class="field" style="margin-top:14px;"><label>نام دسته‌بندی</label><input type="text" id="catName" placeholder="مثلاً خوراک، حمل‌ونقل..."></div>
+    <div class="field"><label>آیکون</label><div class="icon-pick" id="catIconPick"></div></div>
+    <div class="field"><label>رنگ</label><div class="color-pick" id="catColorPick"></div></div>
+    <div class="sheet-actions">
+      <button class="btn danger" id="catDeleteBtn" style="display:none;">حذف</button>
+      <button class="btn ghost" id="catCancelBtn">انصراف</button>
+      <button class="btn primary" id="catSaveBtn">ذخیره</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="settingsOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>تنظیمات و پشتیبان‌گیری</h2>
+    <div class="field">
+      <label>خروجی گرفتن</label>
+      <div class="sub" style="margin:0 0 10px;">همه‌ی تراکنش‌ها و دسته‌بندی‌ها رو توی یه فایل ذخیره کن تا اگه گوشی عوض شد یا کش پاک شد، از دستشون ندی.</div>
+      <button class="btn primary" id="exportBtn" style="width:100%;">📤 دانلود فایل پشتیبان</button>
+    </div>
+    <div class="field">
+      <label>بازیابی از فایل پشتیبان</label>
+      <div class="sub" style="margin:0 0 10px;">با انتخاب یه فایل پشتیبان، اطلاعات فعلی با محتوای اون فایل جایگزین می‌شه.</div>
+      <button class="btn ghost" id="importBtn" style="width:100%;">📥 انتخاب فایل و بازیابی</button>
+      <input type="file" id="importFileInput" accept="application/json" style="display:none;">
+    </div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="settingsCloseBtn" style="flex:1;">بستن</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============ Jalali calendar (ported from the user's own JalaliCalendar Python module) ============ */
+const PERSIAN_MONTHS = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
+const WEEKDAYS_FA = ["شنبه","یکشنبه","دوشنبه","سه‌شنبه","چهارشنبه","پنجشنبه","جمعه"];
+
+function isLeapJalali(y){ return (y % 4) === 3; }
+function jDaysInMonth(y,m){ if(m===12) return isLeapJalali(y) ? 30 : 29; return [31,31,31,31,31,31,30,30,30,30,30,29][m-1]; }
+function gregorianToJalali(gy,gm,gd){
+  const gDaysInMonth=[31,28,31,30,31,30,31,31,30,31,30,31];
+  const jDaysInMonthArr=[31,31,31,31,31,31,30,30,30,30,30,29];
+  if((gy%4===0 && gy%100!==0)||(gy%400===0)) gDaysInMonth[1]=29;
+  const gy2=gy-1600, gm2=gm-1, gd2=gd-1;
+  let gDayNo = 365*gy2 + Math.floor((gy2+3)/4) - Math.floor((gy2+99)/100) + Math.floor((gy2+399)/400);
+  for(let i=0;i<gm2;i++) gDayNo+=gDaysInMonth[i];
+  gDayNo+=gd2;
+  let jDayNo = gDayNo - 79;
+  const jNp = Math.floor(jDayNo/12053);
+  jDayNo %= 12053;
+  let jy = 979 + 33*jNp + 4*Math.floor(jDayNo/1461);
+  jDayNo %= 1461;
+  if(jDayNo>=366){ jy += Math.floor((jDayNo-1)/365); jDayNo=(jDayNo-1)%365; }
+  let jm=0, jd=0, found=false;
+  for(let i=0;i<11;i++){ if(jDayNo<jDaysInMonthArr[i]){ jm=i+1; jd=jDayNo+1; found=true; break; } jDayNo-=jDaysInMonthArr[i]; }
+  if(!found){ jm=12; jd=jDayNo+1; }
+  return [jy,jm,jd];
+}
+function jalaliToGregorian(jy,jm,jd){
+  const jDaysInMonthArr=[31,31,31,31,31,31,30,30,30,30,30,29];
+  if(jy%4===3) jDaysInMonthArr[11]=30;
+  const jy2=jy-979, jm2=jm-1, jd2=jd-1;
+  let jDayNo = 365*jy2 + Math.floor(jy2/33)*8 + Math.floor((jy2%33+3)/4);
+  for(let i=0;i<jm2;i++) jDayNo+=jDaysInMonthArr[i];
+  jDayNo+=jd2;
+  let gDayNo = jDayNo + 79;
+  let gy = 1600 + 400*Math.floor(gDayNo/146097);
+  gDayNo = gDayNo % 146097;
+  let leap=true;
+  if(gDayNo>=36525){ gDayNo-=1; gy += 100*Math.floor(gDayNo/36524); gDayNo = gDayNo % 36524; if(gDayNo>=365) gDayNo+=1; else leap=false; }
+  gy += 4*Math.floor(gDayNo/1461);
+  gDayNo %= 1461;
+  if(gDayNo>=366){ leap=false; gDayNo-=1; gy += Math.floor(gDayNo/365); gDayNo = gDayNo % 365; }
+  const gDaysInMonth=[31, leap?29:28, 31,30,31,30,31,31,30,31,30,31];
+  let gm=0, gd=0, found=false;
+  for(let i=0;i<12;i++){ if(gDayNo<gDaysInMonth[i]){ gm=i+1; gd=gDayNo+1; found=true; break; } gDayNo-=gDaysInMonth[i]; }
+  if(!found){ gm=12; gd=31; }
+  return [gy,gm,gd];
+}
+function todayJalali(){ const t=new Date(); return gregorianToJalali(t.getFullYear(), t.getMonth()+1, t.getDate()); }
+function jalaliWeekday(jy,jm,jd){ const [gy,gm,gd]=jalaliToGregorian(jy,jm,jd); const d=new Date(gy,gm-1,gd); return (d.getDay()+1)%7; }
+function addMonthsJalali(jy,jm,delta){ let total=jm-1+delta; let y=jy+Math.floor(total/12); let m=(total%12+12)%12+1; return [y,m]; }
+
+const FA_DIGITS=['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+function toFaDigits(str){ return String(str).replace(/[0-9]/g, d=>FA_DIGITS[d]); }
+function toEnDigits(str){ return String(str).replace(/[۰-۹]/g, d=>FA_DIGITS.indexOf(d)); }
+function formatMoney(n){ n=Math.round(n||0); const neg=n<0; n=Math.abs(n); const s=n.toLocaleString('en-US'); return (neg?'-':'')+toFaDigits(s); }
+
+/* ============ State ============ */
+const DEFAULT_CATEGORIES = [
+  {id:'inc_salary', name:'حقوق', type:'income', color:'#2f6fed', icon:'💼'},
+  {id:'inc_free', name:'درآمد آزاد', type:'income', color:'#16a673', icon:'🧾'},
+  {id:'inc_gift', name:'هدیه', type:'income', color:'#5b8cff', icon:'🎁'},
+  {id:'exp_food', name:'خوراک', type:'expense', color:'#ef5a63', icon:'🍽️'},
+  {id:'exp_transport', name:'حمل‌ونقل', type:'expense', color:'#f0924a', icon:'🚗'},
+  {id:'exp_bills', name:'قبوض', type:'expense', color:'#c98a2c', icon:'🧾'},
+  {id:'exp_home', name:'خانه', type:'expense', color:'#8a5a3f', icon:'🏠'},
+  {id:'exp_fun', name:'تفریح', type:'expense', color:'#c04fa0', icon:'🎬'},
+  {id:'exp_health', name:'سلامت', type:'expense', color:'#7a4fa3', icon:'💊'},
+  {id:'exp_other', name:'متفرقه', type:'expense', color:'#6b7690', icon:'📦'},
+];
+const ICON_CHOICES = ['💰','💼','🧾','🎁','🍽️','🚗','🏠','🧴','🎬','💊','📦','👕','📚','🐾','✈️','🎓','⚡','📱','☕','🛒'];
+const COLOR_CHOICES = ['#2f6fed','#5b8cff','#16a673','#c98a2c','#f0924a','#ef5a63','#8a5a3f','#c04fa0','#7a4fa3','#3fa3c9','#6b7690','#4a5568'];
+
+let state = { categories: DEFAULT_CATEGORIES.slice(), transactions: [] };
+let dbHandle=null;
+let [curYear, curMonth] = todayJalali();
+let currentPage='dash';
+let txFilter='all';
+let editingTxId=null, editingCatId=null;
+let formType='expense', formCatId=null;
+let catFormType='expense', catFormIcon=ICON_CHOICES[0], catFormColor=COLOR_CHOICES[0];
+let trendPeriod=6, catPeriod=1, yearPeriod=12, healthPeriod=6;
+let charts={};
+
+function uid(){ return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+
+function seedDemoData(){
+  const [ty,tm] = todayJalali();
+  const items = [
+    [-3,3,'inc_salary',18500000,'حقوق'], [-3,7,'exp_food',1250000,'خرید هفتگی'],
+    [-3,14,'exp_transport',620000,'بنزین'], [-3,20,'exp_bills',940000,'قبض برق و آب'],
+    [-2,3,'inc_salary',18500000,'حقوق'], [-2,5,'exp_food',980000,''],
+    [-2,10,'exp_fun',450000,'سینما'], [-2,22,'inc_free',3200000,'پروژه فریلنس'],
+    [-1,3,'inc_salary',19000000,'حقوق'], [-1,8,'exp_food',1400000,''],
+    [-1,12,'exp_home',2100000,'اجاره'], [-1,18,'exp_health',560000,'داروخانه'],
+    [0,2,'inc_salary',19000000,'حقوق'], [0,5,'exp_food',870000,''],
+    [0,9,'exp_transport',300000,'تاکسی'],
+  ];
+  items.forEach(([offset,day,catId,amount,note])=>{
+    const [y,m] = addMonthsJalali(ty,tm,offset);
+    const days = jDaysInMonth(y,m);
+    state.transactions.push({ id:uid(), type: catId.startsWith('inc')?'income':'expense', categoryId:catId, amount, jy:y, jm:m, jd:Math.min(day,days), note, createdAt:Date.now(), demo:true });
+  });
+}
+
+/* ============ Persistence ============ */
+async function initStorage(){
+  try{ if(window.claude && window.claude.use){ dbHandle = await window.claude.use('db'); } }catch(e){ dbHandle=null; }
+  let loaded=null;
+  if(dbHandle){ try{ const doc = await dbHandle.doc('data/users/me/finance').get(); if(doc && doc.data) loaded=doc.data; }catch(e){ loaded=null; } }
+  if(!loaded){ try{ const raw=localStorage.getItem('hesabdari_data'); if(raw) loaded=JSON.parse(raw); }catch(e){} }
+  if(loaded){
+    if(Array.isArray(loaded.categories) && loaded.categories.length) state.categories=loaded.categories;
+    if(Array.isArray(loaded.transactions)) state.transactions=loaded.transactions;
+  } else { seedDemoData(); persist(); }
+}
+let saveTimer=null;
+function persist(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(async ()=>{
+    try{ localStorage.setItem('hesabdari_data', JSON.stringify(state)); }catch(e){}
+    if(dbHandle){ try{ await dbHandle.doc('data/users/me/finance').set(state); }catch(e){} }
+  }, 250);
+}
+
+/* ============ Helpers ============ */
+function catsByType(type){ return state.categories.filter(c=>c.type===type); }
+function getCat(id){ return state.categories.find(c=>c.id===id); }
+function monthTx(jy,jm){ return state.transactions.filter(t=>t.jy===jy && t.jm===jm); }
+function rangeTx(jy,jm,months){
+  const set=new Set();
+  for(let i=0;i<months;i++){ const [y,m]=addMonthsJalali(jy,jm,-i); set.add(y+'-'+m); }
+  return state.transactions.filter(t=>set.has(t.jy+'-'+t.jm));
+}
+function totalsOf(list){ let income=0, expense=0; list.forEach(t=>{ if(t.type==='income') income+=t.amount; else expense+=t.amount; }); return {income,expense,balance:income-expense}; }
+function monthTotals(jy,jm){ return totalsOf(monthTx(jy,jm)); }
+function hasDemo(){ return state.transactions.some(t=>t.demo); }
+function clearDemo(){ state.transactions=state.transactions.filter(t=>!t.demo); persist(); renderAll(); showToast('داده‌های نمونه پاک شد'); }
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._timer); t._timer=setTimeout(()=>t.classList.remove('show'),1800); }
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim()||'#888'; }
+function renderDemoBanner(){
+  const el=document.getElementById('demoBannerDash');
+  if(hasDemo()){
+    el.innerHTML = `<div class="demo-banner"><div class="txt">این‌ها داده‌های نمونه‌اند تا ببینی گزارش‌ها چطور کار می‌کنن.</div><button id="clearDemoBtn">شروع واقعی 🚀</button></div>`;
+    document.getElementById('clearDemoBtn').addEventListener('click', clearDemo);
+  } else { el.innerHTML=''; }
+}
+
+/* build an ascending series of the last `months` calendar months ending at (jy,jm) */
+function buildMonthSeries(jy,jm,months){
+  const arr=[];
+  for(let i=months-1;i>=0;i--){
+    const [y,m]=addMonthsJalali(jy,jm,-i);
+    const t=monthTotals(y,m);
+    arr.push({y,m,label:PERSIAN_MONTHS[m-1].slice(0,3),income:t.income,expense:t.expense,balance:t.balance});
+  }
+  const firstNonZero = arr.findIndex(x=>x.income!==0||x.expense!==0);
+  if(firstNonZero===-1) return {items:[arr[arr.length-1]], empty:true};
+  return {items:arr.slice(firstNonZero), empty:false};
+}
+/* daily series across the days of one Jalali month */
+function buildDaySeries(jy,jm){
+  const days=jDaysInMonth(jy,jm);
+  const arr=[];
+  for(let d=1;d<=days;d++){
+    const list=state.transactions.filter(t=>t.jy===jy&&t.jm===jm&&t.jd===d);
+    const t=totalsOf(list);
+    arr.push({d,label:toFaDigits(d),income:t.income,expense:t.expense,balance:t.balance});
+  }
+  const hasAny = arr.some(x=>x.income!==0||x.expense!==0);
+  return {items:arr, empty:!hasAny};
+}
+function healthRatio(income,expense){
+  if(expense>0) return ((income/expense)-1)*100;
+  return income>0 ? 100 : 0;
+}
+
+/* ============ Navigation ============ */
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentPage=btn.dataset.page;
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-'+currentPage).classList.add('active');
+    renderCurrentPage();
+  });
+});
+document.getElementById('prevMonth').addEventListener('click', ()=>{ [curYear,curMonth]=addMonthsJalali(curYear,curMonth,-1); renderAll(); });
+document.getElementById('nextMonth').addEventListener('click', ()=>{ [curYear,curMonth]=addMonthsJalali(curYear,curMonth,1); renderAll(); });
+document.getElementById('themeBtn').addEventListener('click', ()=>{
+  const root=document.documentElement; const cur=root.getAttribute('data-theme');
+  if(cur==='dark') root.setAttribute('data-theme','light');
+  else if(cur==='light') root.removeAttribute('data-theme');
+  else root.setAttribute('data-theme','dark');
+});
+
+/* ============ Rendering ============ */
+function renderMonthLabel(){ document.getElementById('monthLbl').textContent = PERSIAN_MONTHS[curMonth-1]+' '+toFaDigits(curYear); }
+function renderCurrentPage(){
+  renderMonthLabel();
+  if(currentPage==='dash') renderDashboard();
+  else if(currentPage==='tx') renderTxPage();
+  else if(currentPage==='cats') renderCatsPage();
+  else if(currentPage==='reports') renderReportsPage();
+}
+function renderAll(){ renderCurrentPage(); }
+
+function mkPeriodChips(containerId, values, current, onPick){
+  const el=document.getElementById(containerId); el.innerHTML='';
+  values.forEach(p=>{
+    const b=document.createElement('button');
+    b.className = (p===current?'active':'');
+    b.textContent = p===1 ? 'این ماه' : toFaDigits(p)+' ماهه';
+    b.addEventListener('click', ()=>onPick(p));
+    el.appendChild(b);
+  });
+}
+
+function renderDashboard(){
+  renderDemoBanner();
+  const {income,expense,balance} = monthTotals(curYear,curMonth);
+  document.getElementById('heroBalance').innerHTML = formatMoney(balance)+' <span>تومان</span>';
+  document.getElementById('heroIncome').textContent = formatMoney(income);
+  document.getElementById('heroExpense').textContent = formatMoney(expense);
+
+  const ratioSub=document.getElementById('ratioSub');
+  const ratioWrap=document.getElementById('ratioChartWrap');
+  if(income===0 && expense===0){
+    ratioSub.textContent='هنوز تراکنشی برای این ماه ثبت نشده';
+    ratioWrap.innerHTML='<div class="empty"><div class="big">🌱</div><p>با زدن دکمه + اولین تراکنش را ثبت کن</p></div>';
+  } else {
+    ratioWrap.innerHTML='<canvas id="ratioChart"></canvas>';
+    const ratioTxt = expense>0 ? (income/expense).toFixed(2) : '∞';
+    ratioSub.textContent='نسبت دخل به خرج: '+toFaDigits(ratioTxt);
+    if(charts.ratio) charts.ratio.destroy();
+    charts.ratio = new Chart(document.getElementById('ratioChart'), {
+      type:'doughnut',
+      data:{ labels:['دخل','خرج'], datasets:[{ data:[income,expense], backgroundColor:[getCss('--income'),getCss('--expense')], borderWidth:0 }] },
+      options:{ cutout:'68%', plugins:{ legend:{ position:'bottom', labels:{ font:{family:'Vazirmatn', size:12}, color:getCss('--ink'), usePointStyle:true, padding:16 } } }, maintainAspectRatio:false }
+    });
+  }
+
+  mkPeriodChips('trendPeriodChips', [1,3,6,12], trendPeriod, (p)=>{ trendPeriod=p; renderDashboard(); });
+  const trendWrap=document.getElementById('trendChartWrap');
+  const trendSub=document.getElementById('trendSub');
+  let tSeries;
+  if(trendPeriod===1){ tSeries=buildDaySeries(curYear,curMonth); trendSub.textContent='مانده هر روز از این ماه'; }
+  else { tSeries=buildMonthSeries(curYear,curMonth,trendPeriod); trendSub.textContent='مانده هر ماه'; }
+  if(tSeries.empty){
+    trendWrap.innerHTML='<div class="empty"><div class="big">📉</div><p>برای این بازه هنوز داده‌ای نیست</p></div>';
+  } else {
+    trendWrap.innerHTML='<canvas id="trendChart"></canvas>';
+    const labels=tSeries.items.map(x=>x.label);
+    const data=tSeries.items.map(x=>x.balance);
+    const colors=data.map(v=> v>=0 ? getCss('--income') : getCss('--expense'));
+    if(charts.trend) charts.trend.destroy();
+    charts.trend = new Chart(document.getElementById('trendChart'), {
+      type:'bar',
+      data:{ labels, datasets:[{ data, backgroundColor:colors, borderRadius:5, maxBarThickness:trendPeriod===1?14:34 }] },
+      options:{
+        plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => toFaDigits(formatMoney(ctx.parsed.y))+' تومان' } } },
+        scales:{ x:{ grid:{display:false}, ticks:{ font:{family:'Vazirmatn', size:10}, color:getCss('--ink-soft'), maxRotation:0, autoSkip:true } },
+                 y:{ grid:{ color:getCss('--border') }, ticks:{ font:{family:'Vazirmatn', size:10}, color:getCss('--ink-soft'), callback:v=>toFaDigits(v) } } },
+        maintainAspectRatio:false
+      }
+    });
+  }
+}
+
+function renderTxPage(){
+  const filters=document.getElementById('txFilters'); filters.innerHTML='';
+  function mkChip(val,label){ const c=document.createElement('button'); c.className='chip'+(txFilter===val?' active':''); c.textContent=label; c.addEventListener('click', ()=>{ txFilter=val; renderTxPage(); }); return c; }
+  filters.appendChild(mkChip('all','همه')); filters.appendChild(mkChip('income','دخل')); filters.appendChild(mkChip('expense','خرج'));
+
+  let tx = monthTx(curYear,curMonth).filter(t=> txFilter==='all' || t.type===txFilter);
+  tx.sort((a,b)=> b.jd-a.jd || b.createdAt-a.createdAt);
+  const list=document.getElementById('txList'); list.innerHTML='';
+  if(tx.length===0){ list.innerHTML='<div class="empty"><div class="big">📭</div><p>تراکنشی برای این ماه ثبت نشده</p></div>'; return; }
+  const groups={};
+  tx.forEach(t=>{ (groups[t.jd]=groups[t.jd]||[]).push(t); });
+  Object.keys(groups).sort((a,b)=>b-a).forEach(day=>{
+    const wrap=document.createElement('div'); wrap.className='day-group';
+    const lbl=document.createElement('div'); lbl.className='day-lbl';
+    lbl.textContent = toFaDigits(day)+' '+PERSIAN_MONTHS[curMonth-1]+' — '+WEEKDAYS_FA[jalaliWeekday(curYear,curMonth,+day)];
+    wrap.appendChild(lbl);
+    groups[day].forEach(t=>{
+      const cat=getCat(t.categoryId)||{name:'—',color:'#888',icon:'❔'};
+      const row=document.createElement('div'); row.className='tx-row';
+      row.innerHTML = `
+        <div class="tx-icon" style="background:${cat.color}22; color:${cat.color}">${cat.icon}</div>
+        <div class="tx-mid"><div class="cat">${cat.name}</div>${t.note?`<div class="note">${escapeHtml(t.note)}</div>`:''}</div>
+        <div class="tx-amt" style="color:${t.type==='income'?'var(--income)':'var(--expense)'}">${t.type==='income'?'+':'−'}${formatMoney(t.amount)}</div>
+        <button class="tx-del" data-id="${t.id}">✕</button>`;
+      row.querySelector('.tx-mid').addEventListener('click', ()=>openTxSheet(t.id));
+      row.querySelector('.tx-del').addEventListener('click', (e)=>{ e.stopPropagation(); deleteTx(t.id); });
+      wrap.appendChild(row);
+    });
+    list.appendChild(wrap);
+  });
+}
+function deleteTx(id){ state.transactions=state.transactions.filter(t=>t.id!==id); persist(); renderCurrentPage(); showToast('تراکنش حذف شد'); }
+
+function renderCatsPage(){
+  const inc=document.getElementById('catsIncome'), exp=document.getElementById('catsExpense');
+  inc.innerHTML=''; exp.innerHTML='';
+  catsByType('income').forEach(c=>inc.appendChild(mkCatRow(c)));
+  catsByType('expense').forEach(c=>exp.appendChild(mkCatRow(c)));
+  function mkCatRow(c){
+    const row=document.createElement('div'); row.className='cat-row';
+    row.innerHTML = `
+      <div class="cat-swatch" style="background:${c.color}22; color:${c.color}">${c.icon}</div>
+      <div class="cn">${c.name}</div>
+      <div class="cat-actions"><button class="edit-cat">ویرایش</button><button class="del-quick" title="حذف">🗑</button></div>`;
+    row.querySelector('.edit-cat').addEventListener('click', ()=>openCatSheet(c.id));
+    row.querySelector('.del-quick').addEventListener('click', ()=>quickDeleteCat(c.id));
+    return row;
+  }
+}
+function quickDeleteCat(id){
+  const usedCount = state.transactions.filter(t=>t.categoryId===id).length;
+  if(usedCount>0){ showToast(`این دسته در ${toFaDigits(usedCount)} تراکنش استفاده شده — ابتدا آن‌ها را حذف کن`); return; }
+  state.categories = state.categories.filter(c=>c.id!==id);
+  persist(); renderCatsPage(); showToast('دسته‌بندی حذف شد');
+}
+
+function renderReportsPage(){
+  /* ---- category expense bar ---- */
+  mkPeriodChips('catPeriodChips', [1,3,6,12], catPeriod, (p)=>{ catPeriod=p; renderReportsPage(); });
+  document.getElementById('catBarSub').textContent = catPeriod===1 ? 'ماه انتخاب‌شده در بالای صفحه' : 'آخرین '+toFaDigits(catPeriod)+' ماه، از ماه انتخاب‌شده';
+  const rTx = rangeTx(curYear,curMonth,catPeriod);
+  const expTx = rTx.filter(t=>t.type==='expense');
+  const incTx = rTx.filter(t=>t.type==='income');
+  const byCat={}; expTx.forEach(t=>{ byCat[t.categoryId]=(byCat[t.categoryId]||0)+t.amount; });
+  const entries = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  const catBarWrap=document.getElementById('catBarWrap');
+  if(entries.length===0){
+    catBarWrap.innerHTML='<div class="empty"><div class="big">📊</div><p>برای این بازه هنوز خرجی ثبت نشده</p></div>';
+  } else {
+    catBarWrap.innerHTML='<canvas id="catBarChart"></canvas>';
+    const labels=entries.map(e=>(getCat(e[0])||{name:'—'}).name);
+    const data=entries.map(e=>e[1]);
+    const colors=entries.map(e=>(getCat(e[0])||{color:'#888'}).color);
+    if(charts.catBar) charts.catBar.destroy();
+    charts.catBar = new Chart(document.getElementById('catBarChart'), {
+      type:'bar',
+      data:{ labels, datasets:[{ data, backgroundColor:colors, borderRadius:6 }] },
+      options:{
+        indexAxis:'y',
+        plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => toFaDigits(formatMoney(ctx.parsed.x))+' تومان' } } },
+        scales:{ x:{ grid:{ color:getCss('--border') }, ticks:{ font:{family:'Vazirmatn', size:10}, color:getCss('--ink-soft'), callback:v=>toFaDigits(v) } },
+                 y:{ grid:{display:false}, ticks:{ font:{family:'Vazirmatn', size:12}, color:getCss('--ink') } } },
+        maintainAspectRatio:false
+      }
+    });
+  }
+
+  /* ---- numeric summary ---- */
+  const incTotal = incTx.reduce((s,t)=>s+t.amount,0);
+  const expTotal = expTx.reduce((s,t)=>s+t.amount,0);
+  document.getElementById('summarySub').textContent = catPeriod===1 ? 'برای ماه انتخاب‌شده' : 'آخرین '+toFaDigits(catPeriod)+' ماه';
+  const byIncCat={}; incTx.forEach(t=>{ byIncCat[t.categoryId]=(byIncCat[t.categoryId]||0)+t.amount; });
+  const incEntries = Object.entries(byIncCat).sort((a,b)=>b[1]-a[1]);
+  function mkSumRows(entriesArr,total){
+    if(entriesArr.length===0) return '<div class="sum-row"><div class="left"><span class="nm" style="color:var(--ink-soft)">موردی ثبت نشده</span></div></div>';
+    return entriesArr.map(([id,amt])=>{
+      const c=getCat(id)||{name:'—',color:'#888',icon:'❔'};
+      const pct = total>0 ? Math.round(amt/total*100) : 0;
+      return `<div class="sum-row"><div class="left"><div class="ic" style="background:${c.color}22;color:${c.color}">${c.icon}</div><div><span class="nm">${c.name}</span><span class="pct">${toFaDigits(pct)}٪</span></div></div><div class="amt">${formatMoney(amt)}</div></div>`;
+    }).join('');
+  }
+  document.getElementById('summaryBody').innerHTML = `
+    <div class="sum-total inc"><span>مجموع دخل</span><span class="amt">${formatMoney(incTotal)} تومان</span></div>
+    <div class="sum-total exp"><span>مجموع خرج</span><span class="amt">${formatMoney(expTotal)} تومان</span></div>
+    <div class="sum-total net"><span>مانده خالص</span><span class="amt">${formatMoney(incTotal-expTotal)} تومان</span></div>
+    <div class="sum-block"><div class="sum-block-title">دخل به تفکیک دسته</div>${mkSumRows(incEntries,incTotal)}</div>
+    <div class="sum-block"><div class="sum-block-title">خرج به تفکیک دسته</div>${mkSumRows(entries,expTotal)}</div>
+  `;
+
+  /* ---- financial health ratio ---- */
+  mkPeriodChips('healthPeriodChips', [3,6,12], healthPeriod, (p)=>{ healthPeriod=p; renderReportsPage(); });
+  const hSeries = buildMonthSeries(curYear,curMonth,healthPeriod);
+  const healthWrap=document.getElementById('healthChartWrap');
+  if(hSeries.empty){
+    healthWrap.innerHTML='<div class="empty"><div class="big">🧭</div><p>برای این بازه هنوز داده‌ای نیست</p></div>';
+  } else {
+    healthWrap.innerHTML='<canvas id="healthChart"></canvas>';
+    const labels=hSeries.items.map(x=>x.label);
+    const data=hSeries.items.map(x=>Math.round(healthRatio(x.income,x.expense)));
+    const colors=data.map(v=> v>=0 ? getCss('--income') : getCss('--expense'));
+    if(charts.health) charts.health.destroy();
+    charts.health = new Chart(document.getElementById('healthChart'), {
+      type:'bar',
+      data:{ labels, datasets:[{ data, backgroundColor:colors, borderRadius:6, maxBarThickness:38 }] },
+      options:{
+        plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => (ctx.parsed.y>=0?'+':'')+toFaDigits(ctx.parsed.y)+'٪' } } },
+        scales:{ x:{ grid:{display:false}, ticks:{ font:{family:'Vazirmatn', size:11}, color:getCss('--ink-soft') } },
+                 y:{ grid:{ color:getCss('--border') }, ticks:{ font:{family:'Vazirmatn', size:10}, color:getCss('--ink-soft'), callback:v=>toFaDigits(v)+'٪' } } },
+        maintainAspectRatio:false
+      }
+    });
+  }
+
+  /* ---- income vs expense comparison ---- */
+  mkPeriodChips('yearPeriodChips', [1,3,6,12], yearPeriod, (p)=>{ yearPeriod=p; renderReportsPage(); });
+  const yearWrap=document.getElementById('yearChartWrap');
+  let ySeries;
+  if(yearPeriod===1){ ySeries=buildDaySeries(curYear,curMonth); }
+  else { ySeries=buildMonthSeries(curYear,curMonth,yearPeriod); }
+  if(ySeries.empty){
+    yearWrap.innerHTML='<div class="empty"><div class="big">📈</div><p>برای این بازه هنوز داده‌ای نیست</p></div>';
+  } else {
+    yearWrap.innerHTML='<canvas id="yearChart"></canvas>';
+    const labels=ySeries.items.map(x=>x.label);
+    const inc=ySeries.items.map(x=>x.income);
+    const expd=ySeries.items.map(x=>x.expense);
+    if(charts.year) charts.year.destroy();
+    charts.year = new Chart(document.getElementById('yearChart'), {
+      type:'line',
+      data:{ labels, datasets:[
+        { label:'دخل', data:inc, borderColor:getCss('--income'), backgroundColor:getCss('--income')+'22', tension:.35, fill:true, pointRadius:yearPeriod===1?0:2 },
+        { label:'خرج', data:expd, borderColor:getCss('--expense'), backgroundColor:getCss('--expense')+'22', tension:.35, fill:true, pointRadius:yearPeriod===1?0:2 }
+      ]},
+      options:{
+        plugins:{ legend:{ position:'bottom', labels:{ font:{family:'Vazirmatn', size:12}, color:getCss('--ink'), usePointStyle:true, padding:16 } },
+                  tooltip:{ callbacks:{ label: ctx => ctx.dataset.label+': '+toFaDigits(formatMoney(ctx.parsed.y)) } } },
+        scales:{ x:{ grid:{display:false}, ticks:{ font:{family:'Vazirmatn', size:10}, color:getCss('--ink-soft'), maxRotation:0, autoSkip:true } },
+                 y:{ grid:{ color:getCss('--border') }, ticks:{ font:{family:'Vazirmatn', size:9}, color:getCss('--ink-soft'), callback:v=>toFaDigits(v) } } },
+        maintainAspectRatio:false
+      }
+    });
+  }
+}
+
+/* ============ Transaction sheet ============ */
+const txOverlay=document.getElementById('txOverlay');
+function fillDateSelects(){
+  const daySel=document.getElementById('txDay'), monSel=document.getElementById('txMonth'), yrSel=document.getElementById('txYear');
+  monSel.innerHTML = PERSIAN_MONTHS.map((n,i)=>`<option value="${i+1}">${n}</option>`).join('');
+  const [ty,tm,td]=todayJalali();
+  yrSel.innerHTML=''; for(let y=ty-3;y<=ty+1;y++) yrSel.innerHTML+=`<option value="${y}">${toFaDigits(y)}</option>`;
+  function refreshDays(){
+    const y=+yrSel.value, m=+monSel.value; const days=jDaysInMonth(y,m); const prevDay=+daySel.value||td;
+    daySel.innerHTML=''; for(let d=1;d<=days;d++) daySel.innerHTML+=`<option value="${d}">${toFaDigits(d)}</option>`;
+    daySel.value=Math.min(prevDay,days);
+  }
+  monSel.addEventListener('change', refreshDays); yrSel.addEventListener('change', refreshDays);
+  yrSel.value=ty; monSel.value=tm; refreshDays(); daySel.value=td;
+}
+fillDateSelects();
+
+function setFormType(type){
+  formType=type;
+  document.getElementById('typeIncomeBtn').classList.toggle('on', type==='income');
+  document.getElementById('typeExpenseBtn').classList.toggle('on', type==='expense');
+  renderCatPick();
+}
+document.getElementById('typeIncomeBtn').addEventListener('click', ()=>setFormType('income'));
+document.getElementById('typeExpenseBtn').addEventListener('click', ()=>setFormType('expense'));
+
+function renderCatPick(){
+  const pick=document.getElementById('txCatPick'); const cats=catsByType(formType);
+  if(!cats.find(c=>c.id===formCatId)) formCatId = cats[0]?cats[0].id:null;
+  pick.innerHTML='';
+  cats.forEach(c=>{
+    const o=document.createElement('div'); o.className='opt'+(c.id===formCatId?' on':'');
+    o.innerHTML=`<span>${c.icon}</span><span>${c.name}</span>`;
+    o.addEventListener('click', ()=>{ formCatId=c.id; renderCatPick(); });
+    pick.appendChild(o);
+  });
+  if(cats.length===0) pick.innerHTML='<div style="font-size:12.5px;color:var(--ink-soft)">ابتدا یک دسته‌بندی بساز</div>';
+}
+document.getElementById('txAmount').addEventListener('input', function(){
+  let raw=toEnDigits(this.value).replace(/[^\d]/g,'');
+  this.value = raw ? toFaDigits(Number(raw).toLocaleString('en-US')) : '';
+});
+
+function openTxSheet(id){
+  editingTxId=id||null;
+  document.getElementById('txSheetTitle').textContent = id?'ویرایش تراکنش':'ثبت تراکنش جدید';
+  if(id){
+    const t=state.transactions.find(x=>x.id===id);
+    setFormType(t.type); formCatId=t.categoryId; renderCatPick();
+    document.getElementById('txAmount').value=toFaDigits(t.amount.toLocaleString('en-US'));
+    document.getElementById('txNote').value=t.note||'';
+    document.getElementById('txYear').value=t.jy; document.getElementById('txMonth').value=t.jm;
+    document.getElementById('txMonth').dispatchEvent(new Event('change'));
+    document.getElementById('txDay').value=t.jd;
+  } else {
+    setFormType('expense');
+    document.getElementById('txAmount').value=''; document.getElementById('txNote').value='';
+    document.getElementById('txYear').value=curYear; document.getElementById('txMonth').value=curMonth;
+    document.getElementById('txMonth').dispatchEvent(new Event('change'));
+    const [ny,nm,td]=todayJalali();
+    if(curYear===ny && curMonth===nm) document.getElementById('txDay').value=td;
+  }
+  txOverlay.classList.add('open');
+}
+document.getElementById('fabAdd').addEventListener('click', ()=>openTxSheet(null));
+document.getElementById('txCancelBtn').addEventListener('click', ()=>txOverlay.classList.remove('open'));
+txOverlay.addEventListener('click', e=>{ if(e.target===txOverlay) txOverlay.classList.remove('open'); });
+
+document.getElementById('txSaveBtn').addEventListener('click', ()=>{
+  const amountRaw=toEnDigits(document.getElementById('txAmount').value).replace(/[^\d]/g,'');
+  const amount=Number(amountRaw);
+  if(!amount||amount<=0){ showToast('مبلغ را وارد کن'); return; }
+  if(!formCatId){ showToast('یک دسته‌بندی انتخاب کن'); return; }
+  const jy=+document.getElementById('txYear').value, jm=+document.getElementById('txMonth').value, jd=+document.getElementById('txDay').value;
+  const note=document.getElementById('txNote').value.trim();
+  if(editingTxId){
+    const t=state.transactions.find(x=>x.id===editingTxId);
+    Object.assign(t, {type:formType, categoryId:formCatId, amount, jy, jm, jd, note});
+    delete t.demo;
+  } else {
+    state.transactions.push({ id:uid(), type:formType, categoryId:formCatId, amount, jy, jm, jd, note, createdAt:Date.now() });
+  }
+  persist(); txOverlay.classList.remove('open');
+  curYear=jy; curMonth=jm; renderAll(); showToast('ذخیره شد');
+});
+
+/* ============ Category sheet ============ */
+const catOverlay=document.getElementById('catOverlay');
+function renderIconPick(){ const w=document.getElementById('catIconPick'); w.innerHTML=''; ICON_CHOICES.forEach(ic=>{ const b=document.createElement('div'); b.className='ic-opt'+(ic===catFormIcon?' on':''); b.textContent=ic; b.addEventListener('click', ()=>{ catFormIcon=ic; renderIconPick(); }); w.appendChild(b); }); }
+function renderColorPick(){ const w=document.getElementById('catColorPick'); w.innerHTML=''; COLOR_CHOICES.forEach(c=>{ const b=document.createElement('div'); b.className='sw'+(c===catFormColor?' on':''); b.style.background=c; b.addEventListener('click', ()=>{ catFormColor=c; renderColorPick(); }); w.appendChild(b); }); }
+function setCatFormType(type){ catFormType=type; document.getElementById('catTypeIncomeBtn').classList.toggle('on', type==='income'); document.getElementById('catTypeExpenseBtn').classList.toggle('on', type==='expense'); }
+document.getElementById('catTypeIncomeBtn').addEventListener('click', ()=>setCatFormType('income'));
+document.getElementById('catTypeExpenseBtn').addEventListener('click', ()=>setCatFormType('expense'));
+
+function openCatSheet(id){
+  editingCatId=id||null;
+  document.getElementById('catSheetTitle').textContent = id?'ویرایش دسته‌بندی':'دسته‌بندی جدید';
+  document.getElementById('catDeleteBtn').style.display = id?'block':'none';
+  if(id){ const c=getCat(id); setCatFormType(c.type); document.getElementById('catName').value=c.name; catFormIcon=c.icon; catFormColor=c.color; }
+  else { setCatFormType('expense'); document.getElementById('catName').value=''; catFormIcon=ICON_CHOICES[0]; catFormColor=COLOR_CHOICES[0]; }
+  renderIconPick(); renderColorPick(); catOverlay.classList.add('open');
+}
+document.getElementById('addCatBtn').addEventListener('click', ()=>openCatSheet(null));
+document.getElementById('catCancelBtn').addEventListener('click', ()=>catOverlay.classList.remove('open'));
+catOverlay.addEventListener('click', e=>{ if(e.target===catOverlay) catOverlay.classList.remove('open'); });
+
+document.getElementById('catSaveBtn').addEventListener('click', ()=>{
+  const name=document.getElementById('catName').value.trim();
+  if(!name){ showToast('نام دسته‌بندی را وارد کن'); return; }
+  if(editingCatId){ const c=getCat(editingCatId); Object.assign(c, {name, type:catFormType, icon:catFormIcon, color:catFormColor}); }
+  else { state.categories.push({ id:uid(), name, type:catFormType, icon:catFormIcon, color:catFormColor }); }
+  persist(); catOverlay.classList.remove('open'); renderCurrentPage(); showToast('ذخیره شد');
+});
+document.getElementById('catDeleteBtn').addEventListener('click', ()=>{
+  if(!editingCatId) return;
+  quickDeleteCat(editingCatId);
+  catOverlay.classList.remove('open');
+});
+
+/* ============ Settings / Export-Import ============ */
+const settingsOverlay=document.getElementById('settingsOverlay');
+document.getElementById('settingsBtn').addEventListener('click', ()=>settingsOverlay.classList.add('open'));
+document.getElementById('settingsCloseBtn').addEventListener('click', ()=>settingsOverlay.classList.remove('open'));
+settingsOverlay.addEventListener('click', e=>{ if(e.target===settingsOverlay) settingsOverlay.classList.remove('open'); });
+
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  try{
+    const payload = { app:'hesabdari', exportedAt:new Date().toISOString(), categories:state.categories, transactions:state.transactions.filter(t=>!t.demo) };
+    const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const d = new Date();
+    const stamp = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    a.href = url; a.download = 'hesabdari-backup-'+stamp+'.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 2000);
+    showToast('فایل پشتیبان دانلود شد');
+  }catch(e){ showToast('دانلود انجام نشد'); }
+});
+
+document.getElementById('importBtn').addEventListener('click', ()=>document.getElementById('importFileInput').click());
+document.getElementById('importFileInput').addEventListener('change', function(){
+  const file = this.files && this.files[0];
+  this.value = '';
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    let data;
+    try{ data = JSON.parse(e.target.result); }catch(err){ showToast('این فایل معتبر نیست'); return; }
+    if(!data || !Array.isArray(data.categories) || !Array.isArray(data.transactions)){ showToast('این فایل معتبر نیست'); return; }
+    const ok = confirm('این کار همه‌ی داده‌های فعلی رو با محتوای این فایل پشتیبان جایگزین می‌کنه. مطمئنی؟');
+    if(!ok) return;
+    state.categories = data.categories;
+    state.transactions = data.transactions;
+    persist();
+    settingsOverlay.classList.remove('open');
+    renderAll();
+    showToast('بازیابی با موفقیت انجام شد');
+  };
+  reader.readAsText(file);
+});
+
+/* ============ Boot ============ */
+(async function boot(){
+  await initStorage();
+  renderCatPick();
+  renderAll();
+})();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
+
+})();
+</script>
+</body>
+</html>
